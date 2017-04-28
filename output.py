@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'chat.ui'
 #
-# Created: Thu Apr 27 09:20:44 2017
+# Created: Fri Apr 28 03:51:33 2017
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -65,11 +65,15 @@ class Ui_MainWindow(object):
         self.pushButton_2.setGeometry(QtCore.QRect(700, 0, 98, 27))
         self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
         self.verticalLayoutWidget_2 = QtGui.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(50, 179, 201, 301))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(50, 179, 201, 261))
         self.verticalLayoutWidget_2.setObjectName(_fromUtf8("verticalLayoutWidget_2"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_2.setMargin(0)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
+        self.verticalLayout_2.setAlignment(QtCore.Qt.AlignTop)
+        self.pushButton_3 = QtGui.QPushButton(self.centralwidget)
+        self.pushButton_3.setGeometry(QtCore.QRect(50, 460, 201, 27))
+        self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 797, 25))
@@ -88,4 +92,5 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "Send", None))
         self.label_2.setText(_translate("MainWindow", "WELCOME TO CHAT APPLICATION", None))
         self.pushButton_2.setText(_translate("MainWindow", "Logout", None))
+        self.pushButton_3.setText(_translate("MainWindow", "Create new group", None))
 

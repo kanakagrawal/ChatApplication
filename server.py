@@ -3,7 +3,7 @@
 import socket,sys,time
 from thread import *
 
-SERVER_IP = '192.168.100.17'
+SERVER_IP = '10.196.5.108'
 SERVER_PORT = int(sys.argv[1])
 BUFFER_SIZE = 20  # Normally 1024, but we want fast response
 
@@ -13,7 +13,7 @@ ip_addr = {}
 live_users = []
 groups_name = []
 x = ["kanak","abhishek"]
-group = {
+groups = {
 	'Networks':x
 }
 loginCred = {
@@ -21,7 +21,6 @@ loginCred = {
 	"abhishek":"abhishek",
 	"shaan":"shaan"
 }
-
 
 
 #return name of valid user and a bool telling whether valid or not
@@ -69,6 +68,7 @@ def new_client(conn):
 				if name not in live_users:
 					live_users.append(name)
 				sendliveusers()
+				
 		elif(temp=="msg"):
 			print 23,conn.fileno()
 			name = socketid_name[conn.fileno()]
@@ -79,17 +79,26 @@ def new_client(conn):
 			print name,towhom,message,new_msg
 			if towhom in live_users:
 				users_sockets[towhom].send(new_msg)
-			elif towhom in groups_name:
-				for user in group[towhom]:
-					try:
-						users_sockets[user].send(new_msg)
-					except Exception,e:
-						pass
 			else:
 				msg = "error:Delivery Fail"
 				conn.send(msg)
-		# elif(temp=="group"):
-
+		elif(temp=="group"):
+			name = socketid_name[conn.fileno()]
+			data = data[data.find(":")+1:]
+			towhom = data[:data.find(":")]
+			message = data[data.find(":")+1:]
+			new_msg = "group:"+towhom+":"+name+":"+message
+			print name,towhom,message,new_msg
+			if towhom in groups.keys():
+				for user in groups[towhom]:
+					if user!=name:
+						try:
+							users_sockets[user].send(new_msg)
+						except Exception,e:
+							pass
+			else:
+				msg = "error:Delivery Fail"
+				conn.send(msg)
 		elif(temp=="logout"):
 			name = socketid_name[conn.fileno()]
 			live_users.remove(name)
