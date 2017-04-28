@@ -21,7 +21,7 @@ live_users = ["kanak","abhishek","shaan"]
 # kchat = ["Kanak","SDASDAS","dasDASdasdsaSADas"]
 # achat = ["Abhi","SDAS","dASdasdsasdasaSADas","a"]
 # schat = ["Shaan","ASDAS","dasSADas"]
-
+groups = {"Networks": ["kanak", "abhishek"]}
 currentUser = "kanak"
 chats = {
 	# "kanak":kchat,
@@ -29,18 +29,24 @@ chats = {
 	# "shaan":schat,
 }
 
-TCP_IP = '192.168.100.17'
+TCP_IP = '10.196.5.108'
 TCP_PORT = int(sys.argv[1])
 BUFFER_SIZE = 50
 
 SHOW=False
 
 def sendmessage(currentUser,msg,s):
-	x = "new_msg = \"msg:"+currentUser+":"+msg+"$\""
-	exec(str(x))
+	global groups
+	if currentUser in groups.keys():
+		x = "new_msg = \"group:"+currentUser+":"+msg+"$\""
+		exec(str(x))
+	else:
+		x = "new_msg = \"msg:"+currentUser+":"+msg+"$\""
+		exec(str(x))
 		
 	# new_msg = "login:"+currentUser+":"+msg+"\\"
-	s.send(new_msg)
+	sent = s.send(new_msg)
+	return sent
 	time.sleep(1)
 	print "Sent"
 
@@ -61,23 +67,6 @@ class GUI_refresh(QThread):
 			self.sleep(3) # this would be replaced by real code, producing the new text...
 			self.received.emit()
 
-	# global live_users,chats, window, ui, iz
-	# if iz==1:
-	# 	ui.pushButton1 = QtGui.QPushButton(ui.verticalLayoutWidget_2)
-	# 	ui.pushButton1.setObjectName(_fromUtf8("ptton"))
-	# 	window.show()
-	# 	app.exec_()
-
-	# 	iz = 2
-	# 	print 2323213
-	# # ui.verticalLayout_2.addItem(item)
-
-
-
-
-
-
-
 class GUI(QMainWindow):
 
 	def __init__(self,ui,s,parent=None):
@@ -93,20 +82,44 @@ class GUI(QMainWindow):
 		# self.connect(self.ui.pushButton, SIGNAL('clicked()'), self.sendChat)
 		self.ui.pushButton.clicked.connect(partial(self.sendChat))
 		self.ui.pushButton_2.clicked.connect(partial(self.logout))
-	
+		self.ui.pushButton_2.clicked.connect(partial(self.createGroup))
+
+	def createGroup(self):
+		for user in live_users:
+			print "hi"
+			exec("item = QCheckBox('"+user+"')")
+			self.ui.listWidget_2.addItem(item)
+
+
 	def logout(self):
 		msg = "logout:"
 		self.s.send(msg)
+		sys.exit(0)
 
 	def sendChat(self):
-		global currentUser
+		global currentUser, groups
 		msg = self.ui.textEdit.toPlainText()
+		self.ui.textEdit.setPlainText("")
 		if(msg!=""):
-			if currentUser not in chats:
-				x = ["You: "+msg]
-				chats[currentUser] = x
+			if(sendmessage(currentUser,msg,self.s)==0):
+				warningbox = QApplication(sys.argv)       
+				# The QWidget widget is the base class of all user interface objects in PyQt4.
+				windowforwarning = QWidget()
+				# Show a message box
+				result = QMessageBox.warning(windowforwarning, 'Message', "Message could not be sent. User is offline. Try again later")
+				# Show window
+				windowforwarning.show() 
+				
+				sys.exit(warningbox.exec_())
 			else:
-				chats[currentUser].append("You: "+msg)
+				if currentUser not in chats:
+					x = ["You: "+msg]
+					chats[currentUser] = x
+				else:
+					chats[currentUser].append("You: "+msg)
+		
+		self.updateUi()
+
 		# x = "new_msg = \"login:"+currentUser+":"+msg+"$\""
 		# exec(str(x))
 		# new_msg = "login:"+currentUser+":"+msg+"$"
@@ -117,9 +130,6 @@ class GUI(QMainWindow):
 		# time.sleep(1)
 		# print "Sent"
 
-		self.ui.textEdit.setPlainText("")
-		self.updateUi()
-		sendmessage(currentUser,msg,self.s)
 		
 
 	def showcurrentchat(self,user):
@@ -143,7 +153,7 @@ class GUI(QMainWindow):
 		for i in reversed(range(self.ui.verticalLayout_2.count())):
 			self.ui.verticalLayout_2.itemAt(i).widget().deleteLater()
 
-		global live_users
+		global live_users, groups
 		print live_users
 		for user in live_users:
 			exec("self.ui.button_"+user+" = QPushButton(self.ui.verticalLayoutWidget_2)")
@@ -154,6 +164,17 @@ class GUI(QMainWindow):
 		# self.ui.button_Kanak.clicked.connect(lambda : self.showcurrentchat("Kanak"))
 		for user in live_users:
 			exec("self.ui.button_"+user+".clicked.connect(partial(self.showcurrentchat,user))")
+		
+		for group in groups.keys():
+			exec("self.ui.button_"+group+" = QPushButton(self.ui.verticalLayoutWidget_2)")
+			exec("self.ui.button_"+group+".setObjectName(_fromUtf8('button_"+group+"'))")
+			exec("self.ui.verticalLayout_2.addWidget(self.ui.button_"+group+")")
+			exec("self.ui.button_"+group+".setText(group)")
+		self.showcurrentchat(currentUser)
+		# self.ui.button_Kanak.clicked.connect(lambda : self.showcurrentchat("Kanak"))
+		for group in groups.keys():
+			exec("self.ui.button_"+group+".clicked.connect(partial(self.showcurrentchat,group))")	
+
 		# exec("self.connect(self.ui.button_"+user+", SIGNAL('clicked()'), self.showcurrentchat)")
 
 
@@ -193,9 +214,20 @@ def func(oper):
 				live_users = data.split(":")
 				live_users.remove(username)
 				SHOW = True
+			elif(temp=='group'):
+				data = data[data.find(":")+1:]
+				fromwhichgroup = data[:data.find(":")]
+				data = data[data.find(":")+1:]
+				fromwhom = data[:data.find(":")]
+				message = data[data.find(":")+1:]
+				message = fromwhom+": "+message
+				if fromwhichgroup not in chats:
+					x = [message]
+					chats[fromwhichgroup] = x
+				else:
+					chats[fromwhichgroup].append(message)
+				SHOW = True
 	s.close()
-
-
 
 
 if __name__ == '__main__':
@@ -210,8 +242,6 @@ if __name__ == '__main__':
 	
 	s.send(MESSAGE)
 	time.sleep(1)
-	# MESSAGE = "msg:"+"kanak"+":"+"asdasdsadasdasdassadasdasdsadasssssssssssaaaaaaaaaaaaaaaaaaaaaaaa\\"
-	# s.send(MESSAGE)
 
 	data = "send"
 	start_new_thread(func,(data,))
