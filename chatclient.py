@@ -7,7 +7,7 @@ from PyQt4.QtGui import *
 from output import Ui_MainWindow
 from functools import partial
 import time
-
+from time import gmtime, strftime
 try:
 	_fromUtf8 = QString.fromUtf8
 
@@ -16,20 +16,16 @@ except AttributeError:
 		return s
 
 username = ""
-live_users = ["kanak","abhishek","shaan"]
+live_users = {}
 
-# kchat = ["Kanak","SDASDAS","dasDASdasdsaSADas"]
-# achat = ["Abhi","SDAS","dASdasdsasdasaSADas","a"]
-# schat = ["Shaan","ASDAS","dasSADas"]
-groups = {"Networks": ["kanak", "abhishek"]}
-currentUser = "kanak"
-chats = {
-	# "kanak":kchat,
-	# "abhishek":achat,
-	# "shaan":schat,
-}
+groups = {}
 
-TCP_IP = '10.196.5.108'
+currentUser = ""
+
+chatDatabase = {}
+groupChatDatabase = {}
+
+TCP_IP = '192.168.100.11'
 TCP_PORT = int(sys.argv[1])
 BUFFER_SIZE = 50
 
@@ -46,7 +42,7 @@ def sendmessage(currentUser,msg,s):
 		
 	# new_msg = "login:"+currentUser+":"+msg+"\\"
 	sent = s.send(new_msg)
-	return sent
+	# return sent
 	time.sleep(1)
 	print "Sent"
 
@@ -85,38 +81,31 @@ class GUI(QMainWindow):
 		self.ui.pushButton_2.clicked.connect(partial(self.createGroup))
 
 	def createGroup(self):
-		for user in live_users:
-			print "hi"
-			exec("item = QCheckBox('"+user+"')")
-			self.ui.listWidget_2.addItem(item)
+		print "hi"
+	# 	for user in live_users.keys():
+	# 		exec("item = QCheckBox('"+user+"')")
+	# 		self.ui.listWidget_2.addItem(item)
 
 
 	def logout(self):
 		msg = "logout:"
-		self.s.send(msg)
+		timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+		print timestamp
+		self.s.send(msg+timestamp+"$")
+		time.sleep(1)
 		sys.exit(0)
 
 	def sendChat(self):
-		global currentUser, groups
+		global currentUser, chatDatabase
 		msg = self.ui.textEdit.toPlainText()
 		self.ui.textEdit.setPlainText("")
 		if(msg!=""):
-			if(sendmessage(currentUser,msg,self.s)==0):
-				warningbox = QApplication(sys.argv)       
-				# The QWidget widget is the base class of all user interface objects in PyQt4.
-				windowforwarning = QWidget()
-				# Show a message box
-				result = QMessageBox.warning(windowforwarning, 'Message', "Message could not be sent. User is offline. Try again later")
-				# Show window
-				windowforwarning.show() 
-				
-				sys.exit(warningbox.exec_())
+			sendmessage(currentUser,msg,self.s)
+			if currentUser not in chatDatabase.keys():
+				x = ["You: "+msg]
+				chatDatabase[currentUser] = x
 			else:
-				if currentUser not in chats:
-					x = ["You: "+msg]
-					chats[currentUser] = x
-				else:
-					chats[currentUser].append("You: "+msg)
+				chatDatabase[currentUser].append("You: "+msg)
 		
 		self.updateUi()
 
@@ -138,31 +127,39 @@ class GUI(QMainWindow):
 		# time.sleep(1)
 		# print "Sent"
 
-		global currentUser
+		global currentUser, chatDatabase, groupChatDatabase, live_users
 		currentUser = user
+		label = user + " " + live_users[user]
+		self.ui.label_3.setText(label)
 		self.ui.listWidget_2.clear()
 		# for i in reversed(range(self.ui.verticalLayout_2.count())):
 		# self.ui.verticalLayout_2.itemAt(i).widget().deleteLater()
-		if user in chats.keys():
-			for chat in chats[user]:
+		if user in chatDatabase.keys():
+			for chat in chatDatabase[user]:
+				print 5,chat
+				item = QListWidgetItem(chat)
+				self.ui.listWidget_2.addItem(item)
+		elif user in groupChatDatabase.keys():
+			for chat in groupChatDatabase[user]:
 				item = QListWidgetItem(chat)
 				self.ui.listWidget_2.addItem(item)
 
 	def updateUi(self):
-
+		print "called"
 		for i in reversed(range(self.ui.verticalLayout_2.count())):
 			self.ui.verticalLayout_2.itemAt(i).widget().deleteLater()
 
 		global live_users, groups
-		print live_users
-		for user in live_users:
+		print 1,live_users
+		for user in live_users.keys():
 			exec("self.ui.button_"+user+" = QPushButton(self.ui.verticalLayoutWidget_2)")
 			exec("self.ui.button_"+user+".setObjectName(_fromUtf8('button_"+user+"'))")
 			exec("self.ui.verticalLayout_2.addWidget(self.ui.button_"+user+")")
 			exec("self.ui.button_"+user+".setText(user)")
-		self.showcurrentchat(currentUser)
 		# self.ui.button_Kanak.clicked.connect(lambda : self.showcurrentchat("Kanak"))
-		for user in live_users:
+		self.showcurrentchat(currentUser)
+		
+		for user in live_users.keys():
 			exec("self.ui.button_"+user+".clicked.connect(partial(self.showcurrentchat,user))")
 		
 		for group in groups.keys():
@@ -170,11 +167,11 @@ class GUI(QMainWindow):
 			exec("self.ui.button_"+group+".setObjectName(_fromUtf8('button_"+group+"'))")
 			exec("self.ui.verticalLayout_2.addWidget(self.ui.button_"+group+")")
 			exec("self.ui.button_"+group+".setText(group)")
-		self.showcurrentchat(currentUser)
 		# self.ui.button_Kanak.clicked.connect(lambda : self.showcurrentchat("Kanak"))
 		for group in groups.keys():
 			exec("self.ui.button_"+group+".clicked.connect(partial(self.showcurrentchat,group))")	
 
+		self.showcurrentchat(currentUser)
 		# exec("self.connect(self.ui.button_"+user+", SIGNAL('clicked()'), self.showcurrentchat)")
 
 
@@ -186,33 +183,39 @@ class GUI(QMainWindow):
 ################################################################################
 
 def func(oper):
-	global send,check,live_users,SHOW,username
+	global send,check,live_users,SHOW,username, chatDatabase, groupChatDatabase, currentUser
 	# print oper
 	while(True):
 		if(oper == "send" and send):
-			# print oper
 			x = raw_input()
 			s.send(x)
 			send = False
 		elif(oper=="recv"):
-			data = s.recv(BUFFER_SIZE)
-			print data
+			data = ""
+			while True:
+				data = data + s.recv(BUFFER_SIZE)
+				if(data[-1]=="$"):
+					break
+			data = data[:-1]
+			print "data",data
 			temp = data[:data.find(":")]
 			if(temp=="msg"):
 				data = data[data.find(":")+1:]
 				fromwhom = data[:data.find(":")]
 				message = data[data.find(":")+1:]
 				message = fromwhom+": "+message
-				if fromwhom not in chats:
-					x = [message]
-					chats[fromwhom] = x
+				if fromwhom not in chatDatabase.keys():
+					chatDatabase[fromwhom] = [message]
 				else:
-					chats[fromwhom].append(message)
+					chatDatabase[fromwhom].append(message)
+				print "chatDatabase",chatDatabase
 				SHOW = True
 			elif(temp=="list"):
 				data = data[data.find(":")+1:]
-				live_users = data.split(":")
-				live_users.remove(username)
+				live_users = eval(data)
+				del live_users[username]
+				if currentUser=="":
+					currentUser = live_users.keys()[0]	
 				SHOW = True
 			elif(temp=='group'):
 				data = data[data.find(":")+1:]
@@ -221,11 +224,18 @@ def func(oper):
 				fromwhom = data[:data.find(":")]
 				message = data[data.find(":")+1:]
 				message = fromwhom+": "+message
-				if fromwhichgroup not in chats:
-					x = [message]
-					chats[fromwhichgroup] = x
+				if fromwhichgroup not in groupChatDatabase.keys():
+					groupChatDatabase[fromwhichgroup] = [message]
 				else:
-					chats[fromwhichgroup].append(message)
+					groupChatDatabase[fromwhichgroup].append(message)
+				SHOW = True
+			elif(temp=='Database'):
+				data = data[data.find(":")+1:]
+				chatDatabase = eval(data)
+				SHOW = True
+			elif(temp=='GroupDatabase'):
+				data = data[data.find(":")+1:]
+				groupChatDatabase = eval(data)
 				SHOW = True
 	s.close()
 

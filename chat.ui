@@ -18,17 +18,17 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>110</y>
+      <y>80</y>
       <width>256</width>
-      <height>401</height>
+      <height>431</height>
      </rect>
     </property>
    </widget>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>130</y>
+      <x>60</x>
+      <y>100</y>
       <width>171</width>
       <height>31</height>
      </rect>
@@ -118,10 +118,10 @@
    <widget class="QWidget" name="verticalLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>179</y>
-      <width>201</width>
-      <height>261</height>
+      <x>40</x>
+      <y>149</y>
+      <width>211</width>
+      <height>291</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2"/>
@@ -137,6 +137,19 @@
     </property>
     <property name="text">
      <string>Create new group</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>300</x>
+      <y>90</y>
+      <width>439</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
     </property>
    </widget>
   </widget>

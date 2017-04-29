@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'chat.ui'
 #
-# Created: Fri Apr 28 03:51:33 2017
+# Created: Sun Apr 30 02:36:20 2017
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -30,10 +30,10 @@ class Ui_MainWindow(object):
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.listView = QtGui.QListView(self.centralwidget)
-        self.listView.setGeometry(QtCore.QRect(20, 110, 256, 401))
+        self.listView.setGeometry(QtCore.QRect(20, 80, 256, 431))
         self.listView.setObjectName(_fromUtf8("listView"))
         self.label = QtGui.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(50, 130, 171, 31))
+        self.label.setGeometry(QtCore.QRect(60, 100, 171, 31))
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName(_fromUtf8("label"))
         self.verticalLayoutWidget = QtGui.QWidget(self.centralwidget)
@@ -65,15 +65,18 @@ class Ui_MainWindow(object):
         self.pushButton_2.setGeometry(QtCore.QRect(700, 0, 98, 27))
         self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
         self.verticalLayoutWidget_2 = QtGui.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(50, 179, 201, 261))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(40, 149, 211, 291))
         self.verticalLayoutWidget_2.setObjectName(_fromUtf8("verticalLayoutWidget_2"))
         self.verticalLayout_2 = QtGui.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_2.setMargin(0)
         self.verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
-        self.verticalLayout_2.setAlignment(QtCore.Qt.AlignTop)
         self.pushButton_3 = QtGui.QPushButton(self.centralwidget)
         self.pushButton_3.setGeometry(QtCore.QRect(50, 460, 201, 27))
         self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
+        self.label_3 = QtGui.QLabel(self.centralwidget)
+        self.label_3.setGeometry(QtCore.QRect(300, 90, 439, 17))
+        self.label_3.setText(_fromUtf8(""))
+        self.label_3.setObjectName(_fromUtf8("label_3"))
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 797, 25))
