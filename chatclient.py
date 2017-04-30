@@ -15,8 +15,10 @@ except AttributeError:
 	def _fromUtf8(s):
 		return s
 
+temporaryGroupList = []
+
 username = ""
-live_users = {}
+users = {}
 
 groups = {}
 
@@ -82,10 +84,43 @@ class GUI(QMainWindow):
 
 	def createGroup(self):
 		print "hi"
-	# 	for user in live_users.keys():
-	# 		exec("item = QCheckBox('"+user+"')")
-	# 		self.ui.listWidget_2.addItem(item)
+##################code for group creation below, requires testing, define sendInfotoServer######################
+#######################################################################################
+	# 	global users, groupChatDatabase
+	# 	for user in users.keys() and not in groupChatDatabase.keys():
+	# 		exec("self.ui.checkbox_"+user+" = QCheckBox('"+user+"')")
+	# 		exec("self.ui.checkbox_"+user+".stateChanged.connect(lambda:self.btnstate(self.ui.checkbox_"+user+","+user+"))")
+	# 		exec("self.ui.verticalLayout.addWidget(self.ui.checkbox_"+user+")")
+	# 	self.ui.textEdit_2 = QtGui.QTextEdit(self.ui.verticalLayoutWidget)
+	# 	self.ui.textEdit_2.setObjectName(_fromUtf8("textEdit_2"))
+	# 	self.ui.verticalLayout.addWidget(self.ui.textEdit_2)
+	# 	self.ui.textEdit_2.setText("Name your group")	
+	# 	self.ui.submitGroup = QPushButton(self.ui.verticalLayoutWidget)
+	# 	self.ui.submitGroup(_fromUtf8('submitGroup'))
+	# 	self.ui.verticalLayout.addWidget(self.ui.submitGroup)
+	# 	self.ui.submitGroup.setText("Submit")
+	# 	self.ui.submitGroup.clicked.connect(partial(self.submitGroup))
 
+	# def submitGroup(self):
+	# 	if len(temporaryGroupList)!=0:
+	# 		name = self.ui.textEdit_2.toPlainText()
+	# 		self.ui.textEdit.setPlainText("")
+	# 		if name not in groupChatDatabase.keys():
+	# 			groups[name] = temporaryGroupList
+	# 			users[name] = "Online"
+	# 			sendInfoToServer(name)
+	# 		else:
+	# 			print "group name already exists"	
+	# 	temporaryGroupList = []
+	# 	self.showcurrentchat(currentUser)
+
+	# def btnstate(self, b, user)
+	# 	name = b.text()
+	# 	if b.isChecked() == True:
+	# 		temporaryGroupList.append(user)
+	# 	else:
+	# 		temporaryGroupList.remove(user)
+####################################################
 
 	def logout(self):
 		msg = "logout:"
@@ -126,10 +161,15 @@ class GUI(QMainWindow):
 		# self.s.send(new_msg)
 		# time.sleep(1)
 		# print "Sent"
+		# exec("self.ui.button_"+user+".setText(_translate("+MainWindow+", "<html><head/><body><p><span style=\"font-weight:600;\">Online Friends</span></p></body></html>", None))")
 
-		global currentUser, chatDatabase, groupChatDatabase, live_users
+		# self.ui..setText(_translate("MainWindow", "<html><head/><body><p><span style=\"font-weight:600;\">Online Friends</span></p></body></html>", None))
+		global currentUser, chatDatabase, groupChatDatabase, users
 		currentUser = user
-		label = user + " " + live_users[user]
+		if users[user] != "Online":
+			label = user + " Last seen " + users[user]
+		else:
+			label = user + " " + users[user]
 		self.ui.label_3.setText(label)
 		self.ui.listWidget_2.clear()
 		# for i in reversed(range(self.ui.verticalLayout_2.count())):
@@ -149,9 +189,9 @@ class GUI(QMainWindow):
 		for i in reversed(range(self.ui.verticalLayout_2.count())):
 			self.ui.verticalLayout_2.itemAt(i).widget().deleteLater()
 
-		global live_users, groups
-		print 1,live_users
-		for user in live_users.keys():
+		global users, groups
+		print 1,users
+		for user in users.keys():
 			exec("self.ui.button_"+user+" = QPushButton(self.ui.verticalLayoutWidget_2)")
 			exec("self.ui.button_"+user+".setObjectName(_fromUtf8('button_"+user+"'))")
 			exec("self.ui.verticalLayout_2.addWidget(self.ui.button_"+user+")")
@@ -159,7 +199,7 @@ class GUI(QMainWindow):
 		# self.ui.button_Kanak.clicked.connect(lambda : self.showcurrentchat("Kanak"))
 		self.showcurrentchat(currentUser)
 		
-		for user in live_users.keys():
+		for user in users.keys():
 			exec("self.ui.button_"+user+".clicked.connect(partial(self.showcurrentchat,user))")
 		
 		for group in groups.keys():
@@ -183,7 +223,7 @@ class GUI(QMainWindow):
 ################################################################################
 
 def func(oper):
-	global send,check,live_users,SHOW,username, chatDatabase, groupChatDatabase, currentUser
+	global send,check,users,SHOW,username, chatDatabase, groupChatDatabase, currentUser
 	# print oper
 	while(True):
 		if(oper == "send" and send):
@@ -212,10 +252,10 @@ def func(oper):
 				SHOW = True
 			elif(temp=="list"):
 				data = data[data.find(":")+1:]
-				live_users = eval(data)
-				del live_users[username]
+				users = eval(data)
+				del users[username]
 				if currentUser=="":
-					currentUser = live_users.keys()[0]	
+					currentUser = users.keys()[0]	
 				SHOW = True
 			elif(temp=='group'):
 				data = data[data.find(":")+1:]
