@@ -14,30 +14,36 @@ from thread import *
 
 SERVER_IP = '192.168.100.11'
 SERVER_PORT = int(sys.argv[1])
-BUFFER_SIZE = 20  # Normally 1024, but we want fast response
+BUFFER_SIZE = 20  # Normally 1024, but a smaller value results in faster response
 
-users_sockets = {}
-socketid_name = {}
-ip_addr = {}
-users = {}
-groups_name = []
-x = ["kanak","abhishek"]
-group_to_name = {
-	'Networks':x
+users_sockets = {}	#user to socket mapping
+
+socketid_name = {}	#socket to user mapping
+
+ip_addr = {}		#name to ip addr mapping	
+
+users = {}			#user to timestamp (last seen or online) mapping
+
+groups_name = []	
+
+group_to_name = {	#group to list of names in group mapping
+	'Networks':["kanak","abhishek"]
 }
-loginCred = {
+
+name_to_group = {}	#name to 'groups in which the user is' mapping
+
+loginCred = {		#login credentials database
 	"kanak":"kanak",
 	"abhishek":"abhishek",
 	"shaan":"shaan"
 }
 
-chatDatabase = {}
+chatDatabase = {}	#all chats stored as dictionary of dictionary of lists
+					#chatDatabase[user1][user2] returns list of chat messages between them as shown on user1's screen
 
-groupChatDatabase = {}
+groupChatDatabase = {}	#group chats, group to list of chat messages mapping
 
-name_to_group = {}
-
-#return name of valid user and a bool telling whether valid or not
+#returns whether user cred valid or not and name of the valid user
 def validuser(data):
 	print data
 	name = data[:data.find(":")]
@@ -49,30 +55,31 @@ def validuser(data):
 	except Exception,e:
 		return False,name
 
-def sendliveusers():
-	global users,users_sockets
-	msg = str(users)
-	msg = "list:" + msg
+#function for sending list of users and their timestamps to all users
+#when a new user logs in
+#when a user logs out
+def sendUserList():
+	global users, users_sockets
+	msg = "list:" + str(users)	#str(dict) converts a dictionary to a string
 	print 6,users
-	for user in users_sockets:
+	for user in users_sockets:	#send to all online users
 		print 1,user
-		users_sockets[user].send(msg+"$")
+		users_sockets[user].send(msg+"$")	
 	time.sleep(1)
 
+#send chat history to newly logged in clients
 def sendChatHistory(name):
 	global chatDatabase, groupChatDatabase, name_to_group, users_sockets
 	msg = "Database:" + str(chatDatabase[name])
 	users_sockets[name].send(msg+"$")
 	time.sleep(2)
-	msg = "GroupDatabase:"
 	groupdict = {}
 	if name in name_to_group.keys():
 		for group in name_to_group[name]:
 			groupdict[group] = groupChatDatabase[group]
-	msg = msg + str(groupdict)
+	msg = "GroupDatabase:" + str(groupdict)
 	users_sockets[name].send(msg+"$")
 	time.sleep(1)
-
 
 # dict2 = eval(str1)
 ##########################################################
@@ -83,9 +90,11 @@ def sendChatHistory(name):
 	# users_sockets[name].send()
 ############################################################
 
+#function defining how to handle the various messages from the client
 def new_client(conn):
 	global chatDatabase, groupChatDatabase, name_to_group, group_to_name, users_sockets, users
 	while True:
+		#the code below adds up the messages until a $ is observed
 		data =""
 		while True:
 			data = data + conn.recv(BUFFER_SIZE)
@@ -94,8 +103,11 @@ def new_client(conn):
 					break
 		print 0,data
 		data = data[:-1]
+
+		#temp stores the identifier of the message, which decides how to handle the message
 		temp = data[:data.find(":")]
 
+		#user wants to login, sends credentials, so check credentials, send chat history and list of live users if successful log in
 		if(temp=="login"):
 			isvalid,name = validuser(data[data.find(":")+1:])
 			if(isvalid):
@@ -111,8 +123,9 @@ def new_client(conn):
 				elif name not in chatDatabase.keys():
 					chatDatabase[name] = {}
 				print "send live users"
-				sendliveusers()
+				sendUserList()
 				
+		#message to be sent to a user, handles offline user case by updating chat database
 		elif(temp=="msg"):
 			print 23,conn.fileno()
 			name = socketid_name[conn.fileno()]
@@ -138,6 +151,7 @@ def new_client(conn):
 				msg = "error:Delivery Fail"
 				conn.send(msg)
 
+		#message to be sent to a group, ignores if any user online, updates group chat database
 		elif(temp=="group"):
 			name = socketid_name[conn.fileno()]
 			data = data[data.find(":")+1:]
@@ -162,6 +176,7 @@ def new_client(conn):
 				msg = "error:Delivery Fail"
 				conn.send(msg+"$")
 
+		#logout, send list of users to other users
 		elif(temp=="logout"):
 			name = socketid_name[conn.fileno()]
 			data = data[data.find(':')+1:]
@@ -169,7 +184,7 @@ def new_client(conn):
 			print data
 			del users_sockets[name]
 			del socketid_name[conn.fileno()]
-			sendliveusers()
+			sendUserList()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # s.setsockopt(socket.SO_REUSEADDR)
