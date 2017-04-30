@@ -33,6 +33,16 @@ BUFFER_SIZE = 50
 
 SHOW=False
 
+#######################new group send info to server#####
+def sendInfotoServer(name):
+	global groups
+	grouplist = groups[name]
+	grouplist.append(username)
+	msg = "NewGroup:"+name+":"
+	for a in grouplist:
+		msg = msg + a + ","
+	s.send(msg+"$")
+#########################################################
 def sendmessage(currentUser,msg,s):
 	global groups
 	if currentUser in groups.keys():

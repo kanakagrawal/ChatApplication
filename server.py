@@ -175,7 +175,18 @@ def new_client(conn):
 			else:
 				msg = "error:Delivery Fail"
 				conn.send(msg+"$")
-
+				
+############new group server side handling###########
+		# elif(temp=="NewGroup"):
+		# 	data = data[data.find(":")+1:]
+		# 	groupname = data[:data.find(":")]
+		# 	data = data[data.find(":")+1:]
+		# 	usersInGroup = data.split(',')
+		# 	group_to_name[groupname] = usersInGroup
+		# 	users[groupname] = "Group"
+		# 	groupChatDatabase[groups_name] = []
+		# 	sendUserList()
+#######################################################
 		#logout, send list of users to other users
 		elif(temp=="logout"):
 			name = socketid_name[conn.fileno()]
