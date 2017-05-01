@@ -93,7 +93,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
         self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:16pt; font-weight:600; text-decoration: underline;\">Online Friends</span></p></body></html>", None))
         self.pushButton.setText(_translate("MainWindow", "Send", None))
-        self.label_2.setText(_translate("MainWindow", "WELCOME TO CHAT APPLICATION", None))
+        self.label_2.setText(_translate("MainWindow", "SNAKChat", None))
         self.pushButton_2.setText(_translate("MainWindow", "Logout", None))
         self.pushButton_3.setText(_translate("MainWindow", "Create new group", None))
 

@@ -18,6 +18,7 @@ except AttributeError:
 temporaryGroupList = []
 
 username = ""
+
 users = {}
 
 groups = {}
@@ -25,26 +26,31 @@ groups = {}
 currentUser = ""
 
 chatDatabase = {}
+
 groupChatDatabase = {}
 
-TCP_IP = '192.168.100.11'
-TCP_PORT = int(sys.argv[1])
+authenticated = False
+
+
+TCP_IP = sys.argv[1]
+TCP_PORT = int(sys.argv[2])
 BUFFER_SIZE = 50
 
-SHOW=False
 
-#######################new group send info to server#####
-def sendInfotoServer(name):
+def sendInfoToServer(name,s):
 	global groups
-	grouplist = groups[name]
+	grouplist = groups[str(name)]
 	grouplist.append(username)
-	msg = "NewGroup:"+name+":"
-	for a in grouplist:
-		msg = msg + a + ","
-	s.send(msg+"$")
-#########################################################
+	# msg = ""
+	grouplist = str(grouplist)
+	x = "msg = \"NewGroup:"+name+":"+grouplist+"$\""
+	exec(str(x))
+
+	s.send(msg)
+
 def sendmessage(currentUser,msg,s):
 	global groups
+	new_msg = ""
 	if currentUser in groups.keys():
 		x = "new_msg = \"group:"+currentUser+":"+msg+"$\""
 		exec(str(x))
@@ -52,11 +58,9 @@ def sendmessage(currentUser,msg,s):
 		x = "new_msg = \"msg:"+currentUser+":"+msg+"$\""
 		exec(str(x))
 		
-	# new_msg = "login:"+currentUser+":"+msg+"\\"
 	sent = s.send(new_msg)
-	# return sent
-	time.sleep(1)
-	print "Sent"
+
+	time.sleep(2)
 
 class GUI_refresh(QThread):
 
@@ -72,7 +76,7 @@ class GUI_refresh(QThread):
 
 	def run(self):
 		while True:
-			self.sleep(3) # this would be replaced by real code, producing the new text...
+			self.sleep(3) 
 			self.received.emit()
 
 class GUI(QMainWindow):
@@ -87,106 +91,96 @@ class GUI(QMainWindow):
 		self.thread.received.connect(self.updateUi)
 		self.thread.start()	
 
-		# self.connect(self.ui.pushButton, SIGNAL('clicked()'), self.sendChat)
 		self.ui.pushButton.clicked.connect(partial(self.sendChat))
 		self.ui.pushButton_2.clicked.connect(partial(self.logout))
-		self.ui.pushButton_2.clicked.connect(partial(self.createGroup))
+		self.ui.pushButton_3.clicked.connect(partial(self.createGroup))
 
 	def createGroup(self):
-		print "hi"
-##################code for group creation below, requires testing, define sendInfotoServer######################
-#######################################################################################
-	# 	global users, groupChatDatabase
-	# 	for user in users.keys() and not in groupChatDatabase.keys():
-	# 		exec("self.ui.checkbox_"+user+" = QCheckBox('"+user+"')")
-	# 		exec("self.ui.checkbox_"+user+".stateChanged.connect(lambda:self.btnstate(self.ui.checkbox_"+user+","+user+"))")
-	# 		exec("self.ui.verticalLayout.addWidget(self.ui.checkbox_"+user+")")
-	# 	self.ui.textEdit_2 = QtGui.QTextEdit(self.ui.verticalLayoutWidget)
-	# 	self.ui.textEdit_2.setObjectName(_fromUtf8("textEdit_2"))
-	# 	self.ui.verticalLayout.addWidget(self.ui.textEdit_2)
-	# 	self.ui.textEdit_2.setText("Name your group")	
-	# 	self.ui.submitGroup = QPushButton(self.ui.verticalLayoutWidget)
-	# 	self.ui.submitGroup(_fromUtf8('submitGroup'))
-	# 	self.ui.verticalLayout.addWidget(self.ui.submitGroup)
-	# 	self.ui.submitGroup.setText("Submit")
-	# 	self.ui.submitGroup.clicked.connect(partial(self.submitGroup))
+		global users, groupChatDatabase
+		for user in users.keys():
+			exec("self.ui.checkbox_"+user+" = QCheckBox('"+user+"')")
+			exec("self.ui.checkbox_"+user+".stateChanged.connect(partial(self.btnstate,user))")
+			exec("self.ui.verticalLayout.addWidget(self.ui.checkbox_"+user+")")
+		self.ui.textEdit_2 = QTextEdit(self.ui.verticalLayoutWidget)
+		self.ui.textEdit_2.setObjectName(_fromUtf8("textEdit_2"))
+		self.ui.verticalLayout.addWidget(self.ui.textEdit_2)
+		# self.ui.textEdit_2.setText("Name your group")	
+		self.ui.submitGroup = QPushButton(self.ui.verticalLayoutWidget)
+		self.ui.submitGroup.setObjectName(_fromUtf8('submitGroup'))
+		self.ui.verticalLayout.addWidget(self.ui.submitGroup)
+		self.ui.submitGroup.setText("Submit")
+		self.ui.submitGroup.clicked.connect(partial(self.submitGroup))
 
-	# def submitGroup(self):
-	# 	if len(temporaryGroupList)!=0:
-	# 		name = self.ui.textEdit_2.toPlainText()
-	# 		self.ui.textEdit.setPlainText("")
-	# 		if name not in groupChatDatabase.keys():
-	# 			groups[name] = temporaryGroupList
-	# 			users[name] = "Online"
-	# 			sendInfoToServer(name)
-	# 		else:
-	# 			print "group name already exists"	
-	# 	temporaryGroupList = []
-	# 	self.showcurrentchat(currentUser)
+	def submitGroup(self):
+		global temporaryGroupList, users, groups, currentUser, groupChatDatabase
+		if len(temporaryGroupList)!=0:
+			name = self.ui.textEdit_2.toPlainText()
+			name.replace(' ', '_')
+			self.ui.textEdit_2.setPlainText("")
+			if name not in groupChatDatabase.keys():
+				groups[str(name)] = temporaryGroupList
+				sendInfoToServer(name,self.s)
+			else:
+				print "Group name already exists"
+			for user in users.keys():
+				exec("self.ui.checkbox_"+user+".setParent(None)")
+				exec("self.ui.textEdit_2.setParent(None)")
+				exec("self.ui.submitGroup.setParent(None)")
 
-	# def btnstate(self, b, user)
-	# 	name = b.text()
-	# 	if b.isChecked() == True:
-	# 		temporaryGroupList.append(user)
-	# 	else:
-	# 		temporaryGroupList.remove(user)
-####################################################
+
+		temporaryGroupList = []
+		self.showcurrentchat(currentUser)
+
+	def btnstate(self, user):
+		exec("ischecked = self.ui.checkbox_"+user+".isChecked()")
+		if ischecked == True:
+			temporaryGroupList.append(user)
+		else:
+			temporaryGroupList.remove(user)
 
 	def logout(self):
 		msg = "logout:"
 		timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-		print timestamp
 		self.s.send(msg+timestamp+"$")
 		time.sleep(1)
 		sys.exit(0)
 
 	def sendChat(self):
-		global currentUser, chatDatabase
+		global currentUser, chatDatabase, groupChatDatabase
 		msg = self.ui.textEdit.toPlainText()
 		self.ui.textEdit.setPlainText("")
 		if(msg!=""):
 			sendmessage(currentUser,msg,self.s)
-			if currentUser not in chatDatabase.keys():
-				x = ["You: "+msg]
-				chatDatabase[currentUser] = x
+			if currentUser not in groups.keys():
+				if currentUser not in chatDatabase.keys():
+					x = ["You: "+msg]
+					chatDatabase[currentUser] = x
+				else:
+					chatDatabase[currentUser].append("You: "+msg)
 			else:
-				chatDatabase[currentUser].append("You: "+msg)
-		
+				if currentUser not in groupChatDatabase.keys():
+					x = [str("You: "+msg)]
+					groupChatDatabase[currentUser] = x
+				else:
+					groupChatDatabase[currentUser].append(str("You: "+msg))
 		self.updateUi()
-
-		# x = "new_msg = \"login:"+currentUser+":"+msg+"$\""
-		# exec(str(x))
-		# new_msg = "login:"+currentUser+":"+msg+"$"
-		# print new_msg
-		# new_msg = "login:currentUser:msg\\"
-
-		# self.s.send(new_msg)
-		# time.sleep(1)
-		# print "Sent"
-
 		
 
 	def showcurrentchat(self,user):
-		# new_msg = "login:"+"currentUser"+":"+"msg"+"\\"
-		# self.s.send(new_msg)
-		# time.sleep(1)
-		# print "Sent"
-		# exec("self.ui.button_"+user+".setText(_translate("+MainWindow+", "<html><head/><body><p><span style=\"font-weight:600;\">Online Friends</span></p></body></html>", None))")
-
-		# self.ui..setText(_translate("MainWindow", "<html><head/><body><p><span style=\"font-weight:600;\">Online Friends</span></p></body></html>", None))
 		global currentUser, chatDatabase, groupChatDatabase, users
 		currentUser = user
-		if users[user] != "Online":
-			label = user + " Last seen " + users[user]
+		if user in users.keys():
+			if users[user] != "Online":
+				label = user + " Last seen " + users[user]
+			else:
+				label = user + " " + users[user]
 		else:
-			label = user + " " + users[user]
+			label = user
 		self.ui.label_3.setText(label)
+		
 		self.ui.listWidget_2.clear()
-		# for i in reversed(range(self.ui.verticalLayout_2.count())):
-		# self.ui.verticalLayout_2.itemAt(i).widget().deleteLater()
 		if user in chatDatabase.keys():
 			for chat in chatDatabase[user]:
-				print 5,chat
 				item = QListWidgetItem(chat)
 				self.ui.listWidget_2.addItem(item)
 		elif user in groupChatDatabase.keys():
@@ -195,19 +189,19 @@ class GUI(QMainWindow):
 				self.ui.listWidget_2.addItem(item)
 
 	def updateUi(self):
-		print "called"
+		global users, groups
+		self.ui.verticalLayout_2.setAlignment(Qt.AlignTop)
+		
 		for i in reversed(range(self.ui.verticalLayout_2.count())):
 			self.ui.verticalLayout_2.itemAt(i).widget().deleteLater()
 
-		global users, groups
-		print 1,users
 		for user in users.keys():
 			exec("self.ui.button_"+user+" = QPushButton(self.ui.verticalLayoutWidget_2)")
 			exec("self.ui.button_"+user+".setObjectName(_fromUtf8('button_"+user+"'))")
 			exec("self.ui.verticalLayout_2.addWidget(self.ui.button_"+user+")")
 			exec("self.ui.button_"+user+".setText(user)")
-		# self.ui.button_Kanak.clicked.connect(lambda : self.showcurrentchat("Kanak"))
-		self.showcurrentchat(currentUser)
+		if len(users.keys())!=0:
+			self.showcurrentchat(currentUser)
 		
 		for user in users.keys():
 			exec("self.ui.button_"+user+".clicked.connect(partial(self.showcurrentchat,user))")
@@ -217,37 +211,30 @@ class GUI(QMainWindow):
 			exec("self.ui.button_"+group+".setObjectName(_fromUtf8('button_"+group+"'))")
 			exec("self.ui.verticalLayout_2.addWidget(self.ui.button_"+group+")")
 			exec("self.ui.button_"+group+".setText(group)")
-		# self.ui.button_Kanak.clicked.connect(lambda : self.showcurrentchat("Kanak"))
 		for group in groups.keys():
 			exec("self.ui.button_"+group+".clicked.connect(partial(self.showcurrentchat,group))")	
 
-		self.showcurrentchat(currentUser)
-		# exec("self.connect(self.ui.button_"+user+", SIGNAL('clicked()'), self.showcurrentchat)")
+		if len(users.keys())!=0:
+			self.showcurrentchat(currentUser)
 
+	def closeEvent(self, event):
+		self.logout()
+		event.accept() 
 
-		# self.ui.p2 = QPushButton(self.ui.verticalLayoutWidget_2)
-		# self.ui.p2.setObjectName(_fromUtf8("p2"))
-		# self.ui.verticalLayout_2.addWidget(self.ui.p2)
-		# self.ui.p2.setText("Kanak2")
-
-################################################################################
 
 def func(oper):
-	global send,check,users,SHOW,username, chatDatabase, groupChatDatabase, currentUser
-	# print oper
+	global users, groups, username, chatDatabase, groupChatDatabase, currentUser, authenticated
 	while(True):
-		if(oper == "send" and send):
-			x = raw_input()
-			s.send(x)
-			send = False
-		elif(oper=="recv"):
+		if(oper=="recv"):
 			data = ""
 			while True:
 				data = data + s.recv(BUFFER_SIZE)
 				if(data[-1]=="$"):
 					break
 			data = data[:-1]
-			print "data",data
+			tags = ["PyQt4.QtCore.QString(u",")"]
+			for tag in tags:
+				data = data.replace(tag,'')
 			temp = data[:data.find(":")]
 			if(temp=="msg"):
 				data = data[data.find(":")+1:]
@@ -258,15 +245,6 @@ def func(oper):
 					chatDatabase[fromwhom] = [message]
 				else:
 					chatDatabase[fromwhom].append(message)
-				print "chatDatabase",chatDatabase
-				SHOW = True
-			elif(temp=="list"):
-				data = data[data.find(":")+1:]
-				users = eval(data)
-				del users[username]
-				if currentUser=="":
-					currentUser = users.keys()[0]	
-				SHOW = True
 			elif(temp=='group'):
 				data = data[data.find(":")+1:]
 				fromwhichgroup = data[:data.find(":")]
@@ -275,43 +253,99 @@ def func(oper):
 				message = data[data.find(":")+1:]
 				message = fromwhom+": "+message
 				if fromwhichgroup not in groupChatDatabase.keys():
-					groupChatDatabase[fromwhichgroup] = [message]
+					groupChatDatabase[fromwhichgroup] = [str(message)]
 				else:
-					groupChatDatabase[fromwhichgroup].append(message)
-				SHOW = True
+					groupChatDatabase[fromwhichgroup].append(str(message))
+			elif(temp=="list"):
+				data = data[data.find(":")+1:]
+				users = eval(data)
+				del users[username]
+				if currentUser=="":
+					if len(users.keys())!=0:
+						currentUser = users.keys()[0]
+			elif(temp=="grouplist"):
+				data = data[data.find(":")+1:]
+				groups = eval(data)
 			elif(temp=='Database'):
 				data = data[data.find(":")+1:]
 				chatDatabase = eval(data)
-				SHOW = True
 			elif(temp=='GroupDatabase'):
 				data = data[data.find(":")+1:]
 				groupChatDatabase = eval(data)
-				SHOW = True
+			elif(temp=='login'):
+				data = data[data.find(":")+1:]
+				if(data == "False"):
+					authenticated = False
+				elif(data == "True"):
+					authenticated = True
 	s.close()
 
 
 if __name__ == '__main__':
-	username = sys.argv[2]
-	password = sys.argv[3]
-	MESSAGE = "login:"+username+":"+password+"$"
-	check = True
-	send = False
 	global s
+	username = sys.argv[3]
+	password = sys.argv[4]
+	MESSAGE = "login:"+username+":"+password+"$"
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((TCP_IP, TCP_PORT))
 	
 	s.send(MESSAGE)
-	time.sleep(1)
+	# time.sleep(1)
+	app = QApplication(sys.argv)
+	# login = Login(s)
 
 	data = "send"
 	start_new_thread(func,(data,))
 	data = "recv"
 	start_new_thread(func,(data,))
 
-	print "received data:", data
 
-	app = QApplication(sys.argv)
-	ui = Ui_MainWindow()
-	window = GUI(ui,s)
-	window.show()
-	app.exec_()
+	if authenticated == False:
+		time.sleep(2)
+	if authenticated == False:
+		print "Incorrect Credentials"
+	else:
+		ui = Ui_MainWindow()
+		window = GUI(ui,s)
+		window.show()
+		app.exec_()
+
+################################################################################
+#login window tried but did not work
+
+# class Login(QDialog):
+
+# 	def __init__(self,s, parent=None):
+# 		super(Login, self).__init__(parent)
+# 		self.s = s
+# 		self.textName = QLineEdit(self)
+# 		self.textPass = QLineEdit(self)
+# 		self.buttonLogin = QPushButton('Login', self)
+# 		self.buttonLogin.clicked.connect(self.handleLogin)
+
+# 		layout = QVBoxLayout(self)
+# 		layout.addWidget(self.textName)
+# 		layout.addWidget(self.textPass)
+# 		layout.addWidget(self.buttonLogin)
+
+# 	def handleLogin(self):
+# 		global authenticated,username
+# 		username = self.textName.text()
+# 		x = "loginMsg = \"login:"+self.textName.text()+":"+self.textPass.text()+"$\""
+# 		exec(str(x))
+		
+# 		# loginMsg = "login:"+self.textName.text()+":"+self.textPass.text()+"$"
+# 		# print loginMsg
+# 		self.s.send(loginMsg)
+# 		# print username
+
+
+# 		# data = ""
+# 		# while True:
+# 		time.sleep(2)
+		
+# 	# def updateUi(self, authenticated):
+# 	# 	print 1231312321
+		
+
+################################################################################
